@@ -52,7 +52,7 @@ class Engine {
     
     public update(): void {
         for (let i = 0; i < this.boids.length; i++) {
-            this.boids[i].fly();
+            this.boids[i].fly(this.boids);
         }
 		this.renderer.render(this.scene, this.camera);
 	}

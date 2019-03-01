@@ -2,8 +2,7 @@ window.onload = () => {
     const elem = document.getElementById('container');
     elem.innerHTML = "";
 
-    const engine = new Engine(elem, 0xEFCBB8);
-    engine.enableShadows();
+    const engine = new Engine(elem, 0xF3D9CB);
 
     // CAMERA
     {
@@ -19,7 +18,6 @@ window.onload = () => {
     }
     
     elem.addEventListener('click', (event) => {
-        console.log('event');
         engine.addBoid(new Boid(Math.random()));
     })
 
