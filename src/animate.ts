@@ -2,7 +2,7 @@ window.onload = () => {
     const elem = document.getElementById('container');
     elem.innerHTML = "";
 
-    const engine = new Engine(elem, 0xF3D9CB);
+    const engine = new Engine(elem, 0xEFCBB8);
 
     // CAMERA
     {
@@ -16,11 +16,14 @@ window.onload = () => {
         camera.rotation.x = -Math.PI / 16;
         engine.setCamera(camera);
     }
-    
+
     elem.addEventListener('click', (event) => {
-        engine.addBoid(new Boid(Math.random()));
+        engine.addBoid(new Boid());
     })
 
+    for (let i = 0; i < 10; i++) {
+        setTimeout(() => { engine.addBoid(new Boid()) }, 700 * i);
+    }
     // START THE ENGINE
     function animate() {
         requestAnimationFrame(animate);
