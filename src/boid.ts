@@ -3,6 +3,7 @@
 class Boid extends THREE.LineSegments {
     private visibility: number;
     private weight: number;
+    private force: number;
     private direction: THREE.Vector3;
     private neighbours: Boid[];
 
@@ -15,9 +16,9 @@ class Boid extends THREE.LineSegments {
         this.position.x = -150;
         this.position.y = 30;
         this.position.z = 150;
-        this.direction = new THREE.Vector3(1 + this.weight, 0, -1 + this.weight);
         this.weight = Math.random();
-        this.visibility = 50;
+        this.direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+        this.visibility = 40 + (10 * this.weight)
     }
 
     private alignWithVelocityVector(): void {
@@ -31,33 +32,68 @@ class Boid extends THREE.LineSegments {
             Math.abs(this.direction.z),
             Math.abs(this.direction.y));
         this.direction.divideScalar(total);
+        this.direction.multiplyScalar(1.5 - (this.weight / 10));
     }
 
-    public setNeighbours(boids: Boid[]) {
-        this.neighbours = [];
-        for (var i = 0; i < boids.length; i++) {
-            if (boids[i] !== this) {
-                if (this.isVisible(boids[i])) {
-                    this.neighbours.push(boids[i]);
-                }
-            }
-        }
-    }
+    // public setNeighbours(boids: Boid[]) {
+    //     this.neighbours = [];
+    //     for (var i = 0; i < boids.length; i++) {
+    //         if (boids[i] !== this) {
+    //             if (this.isVisible(boids[i])) {
+    //                 this.neighbours.push(boids[i]);
+    //             }
+    //         }
+    //     }
+    // }
 
-    private alignment() {
+    private alignment(neighbours: Boid[]) {
         let vel_x = 0;
         let vel_y = 0;
         let vel_z = 0;
+        for (var i = 0; i < neighbours.length; i++) {
+            vel_x += neighbours[i].direction.x;
+            vel_y += neighbours[i].direction.y;
+            vel_z += neighbours[i].direction.z;
+        }
+        // Based on visibility the boids will react according to a weighted reaction time
+        if (neighbours.length) {
+            this.direction.x += (vel_x / neighbours.length) / (this.weight * 10);
+            this.direction.y += (vel_y / neighbours.length) / (this.weight * 10);
+            this.direction.z += (vel_z / neighbours.length) / (this.weight * 10);
+        }
+    }
+
+    private cohesion() {
+        let pos_x = 0;
+        let pos_y = 0;
+        let pos_z = 0;
         for (var i = 0; i < this.neighbours.length; i++) {
-            vel_x += this.neighbours[i].direction.x;
-            vel_y += this.neighbours[i].direction.y;
-            vel_z += this.neighbours[i].direction.z;
+            pos_x += this.neighbours[i].position.x;
+            pos_y += this.neighbours[i].position.y;
+            pos_z += this.neighbours[i].position.z;
         }
         // Based on visibility the boids will react according to a weighted reaction time
         if (this.neighbours.length) {
-            this.direction.x += (vel_x / this.neighbours.length) / (this.weight / 0.1);
-            this.direction.y += (vel_y / this.neighbours.length) / (this.weight / 0.1);
-            this.direction.z += (vel_z / this.neighbours.length) / (this.weight / 0.1);
+            this.direction.x += ((pos_x / this.neighbours.length) - this.position.x) / (this.weight / 0.1);
+            this.direction.y += ((pos_y / this.neighbours.length) - this.position.y) / (this.weight / 0.1);
+            this.direction.z += ((pos_z / this.neighbours.length) - this.position.z) / (this.weight / 0.1);
+        }
+    }
+
+    private separation() {
+        let pos_x = 0;
+        let pos_y = 0;
+        let pos_z = 0;
+        for (var i = 0; i < this.neighbours.length; i++) {
+            pos_x += this.neighbours[i].position.x;
+            pos_y += this.neighbours[i].position.y;
+            pos_z += this.neighbours[i].position.z;
+        }
+        // Based on visibility the boids will react according to a weighted reaction time
+        if (this.neighbours.length) {
+            this.direction.x += (this.position.x - (pos_x / this.neighbours.length)) // (this.weight / 0.1);
+            this.direction.y += (this.position.y - (pos_y / this.neighbours.length)) // (this.weight / 0.1);
+            this.direction.z += (this.position.z - (pos_z / this.neighbours.length)) // (this.weight / 0.1);
         }
     }
 
@@ -68,13 +104,19 @@ class Boid extends THREE.LineSegments {
             Math.abs(boid.position.z - this.position.z) < this.visibility
     }
 
-    public fly() {
-        this.direction.x += (Math.random() - 0.5) / (this.weight / 0.01)
-        this.direction.y += (Math.random() - 0.5) / (this.weight / 0.01)
-        this.direction.z += (Math.random() - 0.5) / (this.weight / 0.01)
-        this.position.x += this.direction.x;
-        this.position.y += this.direction.y;
-        this.position.z += this.direction.z;
+    private isForcible(boid: Boid) {
+        // Naive distance calculator, currently a cube
+        return Math.abs(boid.position.x - this.position.x) < this.force &&
+            Math.abs(boid.position.y - this.position.y) < this.force &&
+            Math.abs(boid.position.z - this.position.z) < this.force
+    }
+
+    public fly(neighbours: Boid[]) {
+        // this.direction.x += (Math.random() - 0.5) / (this.weight / 0.01)
+        // this.direction.y += (Math.random() - 0.5) / (this.weight / 0.01)
+        // this.direction.z += (Math.random() - 0.5) / (this.weight / 0.01)
+        
+        
 
         // Stops boidw flying out of zone
         // @todo replace with object avoidance
@@ -90,8 +132,28 @@ class Boid extends THREE.LineSegments {
             this.position.z > 250) {
             this.direction.z = -this.direction.z;
         }
-        this.alignment();
-        this.normalize();
+        this.alignment(neighbours);
+        // this.cohesion();
+        // this.separation();
+        this.position.x += this.direction.x;
+        this.position.y += this.direction.y;
+        this.position.z += this.direction.z;
+        if (this.direction.x > 2) {
+            this.direction.x = 2
+        }if (this.direction.y > 2) {
+            this.direction.y = 2
+        }if (this.direction.z > 2) {
+            this.direction.z = 2
+        }
+        if (this.direction.x < -2) {
+            this.direction.x = -2
+        }if (this.direction.y < -2) {
+            this.direction.y = -2
+        }if (this.direction.z < -2) {
+            this.direction.z = -2
+        }
+        
+        // this.normalize();
         this.alignWithVelocityVector();
     }
 }

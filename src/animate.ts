@@ -18,12 +18,9 @@ window.onload = () => {
     }
 
     elem.addEventListener('click', (event) => {
-        engine.addBoid(new Boid());
+        engine.addToFlock();
     })
 
-    for (let i = 0; i < 10; i++) {
-        setTimeout(() => { engine.addBoid(new Boid()) }, 700 * i);
-    }
     // START THE ENGINE
     function animate() {
         requestAnimationFrame(animate);

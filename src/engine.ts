@@ -4,10 +4,8 @@ class Engine {
     private renderer: THREE.WebGLRenderer;
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
-    private height: number;
-    public boids: Boid[];
+    public flock: Flock;
     private element: HTMLElement;
-    private MAXIMUM: number = 40;
 
     public constructor(element: HTMLElement, clearColour: number) {
         this.renderer = new THREE.WebGLRenderer();
@@ -15,9 +13,9 @@ class Engine {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(element.clientWidth, element.clientHeight);
         element.appendChild(this.renderer.domElement);
-        this.boids = [];
 
         this.scene = new THREE.Scene();
+        this.flock = new Flock(this.scene, 20, 40);
     }
 
     public enableShadows(): void {
@@ -41,20 +39,16 @@ class Engine {
         this.scene.background = new THREE.Color(0xEFCBB8);
     }
 
-    public addBoid(object: Boid): void {
-        if (this.boids.length === this.MAXIMUM) {
-            const obsolete = this.boids.shift();
+    public addToFlock() {
+        if (this.flock.size === this.flock.max) {
+            const obsolete = this.flock.flock.shift();
             this.scene.remove(obsolete);
         }
-        this.boids.push(object);
-        this.scene.add(object);
+        this.flock.addBoid(this.scene);
     }
 
     public update(): void {
-        for (let i = 0; i < this.boids.length; i++) {
-            this.boids[i].setNeighbours(this.boids);
-            this.boids[i].fly();
-        }
+        this.flock.updateFlock();
         this.renderer.render(this.scene, this.camera);
     }
 }

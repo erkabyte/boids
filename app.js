@@ -15,7 +15,6 @@ window.onload = function () {
     var elem = document.getElementById('container');
     elem.innerHTML = "";
     var engine = new Engine(elem, 0xEFCBB8);
-    engine.enableShadows();
     {
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / elem.clientHeight, 0.2, 1000);
         camera.position.set(-200, 30, 200);
@@ -28,8 +27,7 @@ window.onload = function () {
         engine.setCamera(camera);
     }
     elem.addEventListener('click', function (event) {
-        console.log('event');
-        engine.addBoid(new Boid(Math.random()));
+        engine.addToFlock();
     });
     function animate() {
         requestAnimationFrame(animate);
@@ -39,20 +37,19 @@ window.onload = function () {
 };
 var Boid = (function (_super) {
     __extends(Boid, _super);
-    function Boid(weight) {
+    function Boid() {
         var _this = this;
-        var geometry = new THREE.ConeBufferGeometry(2, 6, 8);
-        var edges = new THREE.EdgesGeometry(geometry, 1);
+        var geometry = new THREE.ConeBufferGeometry(3, 8, 3);
+        var edges = new THREE.EdgesGeometry(geometry, 0);
         edges.applyMatrix(new THREE.Matrix4().makeTranslation(0, -1, 0));
         edges.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-        _this = _super.call(this, edges, new THREE.LineBasicMaterial({
-            color: 0xffffff
-        })) || this;
-        _this.position.x = -200;
-        _this.position.y = 25;
-        _this.position.z = 200;
-        _this.direction = new THREE.Vector3(1, 0, -1);
-        _this.weight = weight;
+        _this = _super.call(this, edges, new THREE.LineBasicMaterial()) || this;
+        _this.position.x = -150;
+        _this.position.y = 30;
+        _this.position.z = 150;
+        _this.weight = Math.random();
+        _this.direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+        _this.visibility = 40 + (10 * _this.weight);
         return _this;
     }
     Boid.prototype.alignWithVelocityVector = function () {
@@ -62,28 +59,98 @@ var Boid = (function (_super) {
     Boid.prototype.normalize = function () {
         var total = Math.max(Math.abs(this.direction.x), Math.abs(this.direction.z), Math.abs(this.direction.y));
         this.direction.divideScalar(total);
-        this.direction.multiplyScalar(0.5 + this.weight);
+        this.direction.multiplyScalar(1.5 - (this.weight / 10));
     };
-    Boid.prototype.fly = function () {
-        this.direction.x += (Math.random() - 0.5) / (this.weight * 50);
-        this.direction.y += (Math.random() - 0.5) / (this.weight * 50);
-        this.direction.z += (Math.random() - 0.5) / (this.weight * 50);
-        this.position.x += this.direction.x;
-        this.position.y += this.direction.y;
-        this.position.z += this.direction.z;
+    Boid.prototype.alignment = function (neighbours) {
+        var vel_x = 0;
+        var vel_y = 0;
+        var vel_z = 0;
+        for (var i = 0; i < neighbours.length; i++) {
+            vel_x += neighbours[i].direction.x;
+            vel_y += neighbours[i].direction.y;
+            vel_z += neighbours[i].direction.z;
+        }
+        if (neighbours.length) {
+            this.direction.x += (vel_x / neighbours.length) / (this.weight * 10);
+            this.direction.y += (vel_y / neighbours.length) / (this.weight * 10);
+            this.direction.z += (vel_z / neighbours.length) / (this.weight * 10);
+        }
+    };
+    Boid.prototype.cohesion = function () {
+        var pos_x = 0;
+        var pos_y = 0;
+        var pos_z = 0;
+        for (var i = 0; i < this.neighbours.length; i++) {
+            pos_x += this.neighbours[i].position.x;
+            pos_y += this.neighbours[i].position.y;
+            pos_z += this.neighbours[i].position.z;
+        }
+        if (this.neighbours.length) {
+            this.direction.x += ((pos_x / this.neighbours.length) - this.position.x) / (this.weight / 0.1);
+            this.direction.y += ((pos_y / this.neighbours.length) - this.position.y) / (this.weight / 0.1);
+            this.direction.z += ((pos_z / this.neighbours.length) - this.position.z) / (this.weight / 0.1);
+        }
+    };
+    Boid.prototype.separation = function () {
+        var pos_x = 0;
+        var pos_y = 0;
+        var pos_z = 0;
+        for (var i = 0; i < this.neighbours.length; i++) {
+            pos_x += this.neighbours[i].position.x;
+            pos_y += this.neighbours[i].position.y;
+            pos_z += this.neighbours[i].position.z;
+        }
+        if (this.neighbours.length) {
+            this.direction.x += (this.position.x - (pos_x / this.neighbours.length));
+            this.direction.y += (this.position.y - (pos_y / this.neighbours.length));
+            this.direction.z += (this.position.z - (pos_z / this.neighbours.length));
+        }
+    };
+    Boid.prototype.isVisible = function (boid) {
+        return Math.abs(boid.position.x - this.position.x) < this.visibility &&
+            Math.abs(boid.position.y - this.position.y) < this.visibility &&
+            Math.abs(boid.position.z - this.position.z) < this.visibility;
+    };
+    Boid.prototype.isForcible = function (boid) {
+        return Math.abs(boid.position.x - this.position.x) < this.force &&
+            Math.abs(boid.position.y - this.position.y) < this.force &&
+            Math.abs(boid.position.z - this.position.z) < this.force;
+    };
+    Boid.prototype.fly = function (neighbours) {
         if (this.position.x < -250 ||
             this.position.x > 250) {
             this.direction.x = -this.direction.x;
         }
         if (this.position.y < -100 ||
-            this.position.y > 100) {
+            this.position.y > 150) {
             this.direction.y = -this.direction.y;
         }
         if (this.position.z < -250 ||
             this.position.z > 250) {
             this.direction.z = -this.direction.z;
         }
-        this.normalize();
+        this.alignment(neighbours);
+        this.position.x += this.direction.x;
+        this.position.y += this.direction.y;
+        this.position.z += this.direction.z;
+        if (this.direction.x > 2) {
+            this.direction.x = 2;
+        }
+        if (this.direction.y > 2) {
+            this.direction.y = 2;
+        }
+        if (this.direction.z > 2) {
+            this.direction.z = 2;
+        }
+        if (this.direction.x < -2) {
+            this.direction.x = -2;
+        }
+        if (this.direction.y < -2) {
+            this.direction.y = -2;
+        }
+        if (this.direction.z < -2) {
+            this.direction.z = -2;
+        }
         this.alignWithVelocityVector();
     };
     return Boid;
@@ -95,8 +162,8 @@ var Engine = (function () {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(element.clientWidth, element.clientHeight);
         element.appendChild(this.renderer.domElement);
-        this.boids = [];
         this.scene = new THREE.Scene();
+        this.flock = new Flock(this.scene, 20, 40);
     }
     Engine.prototype.enableShadows = function () {
         this.renderer.shadowMap.enabled = true;
@@ -116,19 +183,55 @@ var Engine = (function () {
     Engine.prototype.setBackground = function () {
         this.scene.background = new THREE.Color(0xEFCBB8);
     };
-    Engine.prototype.addBoid = function (object) {
-        if (this.boids.length === 20) {
-            var obsolete = this.boids.shift();
+    Engine.prototype.addToFlock = function () {
+        if (this.flock.size === this.flock.max) {
+            var obsolete = this.flock.flock.shift();
             this.scene.remove(obsolete);
         }
-        this.boids.push(object);
-        this.scene.add(object);
+        this.flock.addBoid(this.scene);
     };
     Engine.prototype.update = function () {
-        for (var i = 0; i < this.boids.length; i++) {
-            this.boids[i].fly();
-        }
+        this.flock.updateFlock();
         this.renderer.render(this.scene, this.camera);
     };
     return Engine;
+}());
+var Flock = (function () {
+    function Flock(scene, initialSize, maxSize) {
+        this.flock = [];
+        this.max = maxSize;
+        this.populate(scene, initialSize);
+        this.distance = 20;
+        this.distanceSquared = Math.pow(this.distance, 2);
+    }
+    Flock.prototype.setSize = function () {
+        this.size = this.flock.length;
+    };
+    Flock.prototype.populate = function (scene, size) {
+        for (var i = 0; i < size; i++) {
+            this.addBoid(scene);
+        }
+    };
+    Flock.prototype.addBoid = function (scene) {
+        var boid = new Boid();
+        this.flock.push(boid);
+        this.setSize();
+        scene.add(boid);
+    };
+    Flock.prototype.updateFlock = function () {
+        for (var i = 0; i < this.size; i++) {
+            var neighbors = [];
+            for (var j = 0; j < this.size; j++) {
+                if (j != i) {
+                    var squareDistance = Math.pow(this.flock[j].position.x - this.flock[i].position.x, 2)
+                        + Math.pow(this.flock[j].position.y - this.flock[i].position.y, 2);
+                    if (squareDistance < this.distanceSquared) {
+                        neighbors.push(this.flock[j]);
+                    }
+                }
+            }
+            this.flock[i].fly(neighbors);
+        }
+    };
+    return Flock;
 }());
