@@ -1,14 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>Flocking</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<meta name="description" content="Creating flocking behaviour in a group of flying objects">
-	</head>
-		<div style="height:500px;width:100%" id="container"></div>
-		<script src="src/three.js"></script>
-		<script src="app.js"></script>
-	</body>
-</html>
 
+<head>
+	<title>Flocking</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta name="description" content="Creating flocking behaviour in a group of flying objects">
+</head>
+<div style="height:500px;width:100%" id="container"></div>
+<div class="slidecontainer">
+	<input type="range" min="0" max="0.3" value="0.1" class="slider" step="0.01" id="align">
+</div>
+<div class="slidecontainer">
+	<input type="range" min="0" max="0.5" value="0.066" class="slider" step="0.01" id="cohesion">
+</div>
+<div class="slidecontainer">
+	<input type="range" min="0" max="5" value="2" class="slider" step="0.1" id="separate">
+</div>
+<script src="src/three.js"></script>
+<script src="app.js"></script>
+</body>
+
+</html>

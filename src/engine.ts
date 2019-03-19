@@ -6,6 +6,7 @@ class Engine {
     private camera: THREE.PerspectiveCamera;
     public flock: Flock;
     private element: HTMLElement;
+    private obstacles: THREE.Vector3[];
 
     public constructor(element: HTMLElement, clearColour: number) {
         this.renderer = new THREE.WebGLRenderer();
@@ -15,7 +16,15 @@ class Engine {
         element.appendChild(this.renderer.domElement);
 
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 20, 40);
+        this.flock = new Flock(this.scene, 300, 300);
+        this.obstacles = [new THREE.Vector3(250, 0, 0), 
+            new THREE.Vector3(250, 50, 0),
+            new THREE.Vector3(200, 0, 0),
+            new THREE.Vector3(200, 50, 0),
+            new THREE.Vector3(200, 0, 50),
+            new THREE.Vector3(200, 50, 50),
+            new THREE.Vector3(250, 0, 50),
+            new THREE.Vector3(250, 50, 50),];
     }
 
     public enableShadows(): void {
@@ -48,7 +57,7 @@ class Engine {
     }
 
     public update(): void {
-        this.flock.updateFlock();
+        this.flock.updateFlock(this.obstacles);
         this.renderer.render(this.scene, this.camera);
     }
 }

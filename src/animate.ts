@@ -4,8 +4,29 @@ window.onload = () => {
 
     const engine = new Engine(elem, 0xEFCBB8);
 
+    setCamera();
+
     // CAMERA
-    {
+
+    elem.addEventListener('click', (event) => {
+        engine.addToFlock();
+    })
+
+    window.onresize = function (event) {
+        setCamera();
+    };
+
+    document.getElementById('align').addEventListener('change', (event) => {
+        updateForces();
+    })
+    document.getElementById('cohesion').addEventListener('change', (event) => {
+        updateForces()
+    })
+    document.getElementById('separate').addEventListener('change', (event) => {
+        updateForces()
+    })
+
+    function setCamera() {
         let camera = new THREE.PerspectiveCamera(75, window.innerWidth / elem.clientHeight, 0.2, 1000);
         camera.position.set(-200, 30, 200);
         camera.rotation.order = 'YZX';
@@ -17,9 +38,13 @@ window.onload = () => {
         engine.setCamera(camera);
     }
 
-    elem.addEventListener('click', (event) => {
-        engine.addToFlock();
-    })
+
+    function updateForces() {
+        engine.flock.updateForces
+            (parseFloat((<HTMLInputElement>document.getElementById('align')).value),
+                parseFloat((<HTMLInputElement>document.getElementById('cohesion')).value),
+                parseFloat((<HTMLInputElement>document.getElementById('separate')).value))
+    }
 
     // START THE ENGINE
     function animate() {
