@@ -10,7 +10,7 @@ class Flock {
     this.flock = [];
     this.max = maxSize;
     this.populate(scene, initialSize);
-    this.forces = { a: 0.1, c: 1 / 15, s: 2 };
+    this.forces = { a: 0.1, c: 1 / 15, s: 1 };
   }
 
   private setSize() {

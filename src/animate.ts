@@ -2,7 +2,7 @@ window.onload = () => {
     const elem = document.getElementById('container');
     elem.innerHTML = "";
 
-    const engine = new Engine(elem, 0xEFCBB8);
+    const engine = new Engine(elem, 0xC79EA4);
 
     setCamera();
 

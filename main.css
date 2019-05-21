@@ -1,0 +1,84 @@
+.container {
+    position: relative;
+}
+
+.flexcontainer {
+    margin: 5px;
+    display: flex;
+    justify-content: space-evenly;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+}
+
+p {
+    font-family: 'Roboto', sans-serif;
+    font-size: small;
+    color:  white;
+    text-align: center;
+}
+
+.slidecontainer {
+    width: 100%;
+    max-width: 100px;
+    /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;
+    /* Override default CSS styles */
+    appearance: none;
+    width: 90%;
+    /* Full-width */
+    height: 2px;
+    /* Specified height */
+    background: #fff;
+    /* Grey background */
+    opacity: 0.3;
+    /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s;
+    /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+    
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1;
+    /* Fully shown on mouse-over */
+}
+
+/* Mouse-over effects */
+.slider:focus {
+    outline: none;
+    /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    /* Override default look */
+    appearance: none;
+    width: 10px;
+    /* Set a specific slider handle width */
+    height: 10px;
+    /* Slider handle height */
+    background: rgb(255, 255, 255);
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+    border-radius: 5px;
+}
+
+.slider::-moz-range-thumb {
+    width: 10px;
+    /* Set a specific slider handle width */
+    height: 10px;
+    /* Slider handle height */
+    background: rgb(255, 255, 255);
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+    border-radius: 5px;
+}

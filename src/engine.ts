@@ -14,17 +14,51 @@ class Engine {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(element.clientWidth, element.clientHeight);
         element.appendChild(this.renderer.domElement);
+        this.element = element;
 
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 300, 300);
-        this.obstacles = [new THREE.Vector3(250, 0, 0), 
-            new THREE.Vector3(250, 50, 0),
-            new THREE.Vector3(200, 0, 0),
-            new THREE.Vector3(200, 50, 0),
-            new THREE.Vector3(200, 0, 50),
-            new THREE.Vector3(200, 50, 50),
-            new THREE.Vector3(250, 0, 50),
-            new THREE.Vector3(250, 50, 50),];
+        this.flock = new Flock(this.scene, 300, 400);
+        this.obstacles = []
+            .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
+            .concat(this.makeWall(350, 350, -150, 150, -350, 350))
+            .concat(this.makePlane(-350, 350, -150, -350, 350))
+            .concat(this.makePlane(-350, 350, 150, -350, 350))
+            .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
+            .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
+            .concat(this.makeWall(-100, -0, -40, 40, 0, 100))
+    }
+
+    private makeWall(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) {
+        const points = [];
+        const planeLength = Math.sqrt(Math.pow((x1 - x0), 2) + Math.pow((z1 - z0), 2));
+        const numPoints = (planeLength / 20);
+        const planeHeight = y1 - y0;
+        const numLayers = (planeHeight / 20);
+        const deltaX = (x1 - x0) / numPoints;
+        const deltaY = planeHeight / numLayers;
+        const deltaZ = (z1 - z0) / numPoints;
+        for (let i = 0; i <= numLayers; i++) {
+            for (let j = 0; j <= numPoints; j++) {
+                points.push(new THREE.Vector3(x0 + (deltaX * j), y0 + (deltaY * i), z0 + (deltaZ * j)));
+            }
+        }
+        return points
+    }
+
+    private makePlane(x0: number, x1: number, y: number, z0: number, z1: number) {
+        const points = [];
+        const planeLength = x1 - x0;
+        const numPoints = (planeLength / 20);
+        const planeHeight = z1 - z0;
+        const numLayers = (planeHeight / 20);
+        const deltaX = (x1 - x0) / numPoints;
+        const deltaZ = (z1 - z0) / numPoints;
+        for (let i = 0; i <= numLayers; i++) {
+            for (let j = 0; j <= numPoints; j++) {
+                points.push(new THREE.Vector3(x0 + (deltaX * j), y, z0 + (deltaZ * i)));
+            }
+        }
+        return points
     }
 
     public enableShadows(): void {
@@ -42,10 +76,6 @@ class Engine {
 
     public getCamera(): THREE.PerspectiveCamera {
         return this.camera;
-    }
-
-    public setBackground(): void {
-        this.scene.background = new THREE.Color(0xEFCBB8);
     }
 
     public addToFlock() {

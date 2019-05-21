@@ -7,7 +7,6 @@ class Boid extends THREE.LineSegments {
     public velocity: THREE.Vector3;
     private speed: number;
     private maxSpeed: number;
-    private counter: number;
 
     constructor() {
         var geometry = new THREE.ConeBufferGeometry(3, 8, 3);
@@ -16,15 +15,14 @@ class Boid extends THREE.LineSegments {
         edges.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
         super(edges, new THREE.LineBasicMaterial());
         this.mass = 1 + Math.random();
-        this.position.x = -150;
+        this.scale.set(this.mass / 1.5, this.mass / 1.5, this.mass / 1.5);
+        this.position.x = -300;
         this.position.y = Math.random() * 30;
         this.position.z = 150;
-        this.counter = Math.random() * 10;
-        // this.velocity = new THREE.Vector3(1, 0, (Math.random() - 0.5) * 2);
         this.velocity = new THREE.Vector3(1, (Math.random() - 0.5), (Math.random() - 0.5) * 2);
-        this.visibility = 90 + (10 * this.mass)
+        this.visibility = 60 + (10 * this.mass)
         this.speed = 3 - this.mass;
-        this.maxSpeed = 4 - this.mass;
+        this.maxSpeed = 5 - this.mass;
     }
 
     private alignWithVelocityVector(): void {
@@ -70,7 +68,6 @@ class Boid extends THREE.LineSegments {
             let distance = new THREE.Vector3(this.position.x, this.position.y, this.position.z).distanceTo(neighbours[i].position);
             if (distance < (40 + (10 * this.mass))) {
                 const offset = new THREE.Vector3(this.position.x, this.position.y, this.position.z).sub(neighbours[i].position);
-                // offset.normalize();
                 force.add(offset.divideScalar(distance));
             }
         }
@@ -83,54 +80,13 @@ class Boid extends THREE.LineSegments {
         let force = new THREE.Vector3(0, 0, 0);
         for (var i = 0; i < obstacles.length; i++) {
             let distance = new THREE.Vector3(this.position.x, this.position.y, this.position.z).distanceTo(obstacles[i]);
-            if (distance < (40 + (10 * this.mass))) {
+            if (distance < (80 + (10 * this.mass))) {
                 const offset = new THREE.Vector3(this.position.x, this.position.y, this.position.z).sub(obstacles[i]);
-                // offset.normalize();
                 force.add(offset.divideScalar(distance));
             }
         }
         // Based on visibility the boids will react according to a massed reaction time
-        return force.multiplyScalar(this.mass * 2)
-    }
-
-    private avoidEdges() {
-        let position = new THREE.Vector3(0, 0, 0);
-        // let distance = new Vector3(this.position.x, this.position.y, this.position.z).distanceTo(neighbours[i].position);
-        if (this.position.x > (250 - this.visibility)) {
-            position.x = -Math.abs((1 / (100 * this.mass)) * (250 - this.position.x));
-        }
-        if (this.position.z > (250 - this.visibility)) {
-            position.z = -Math.abs((1 / (100 * this.mass)) * (250 - this.position.z));
-        }
-        if (this.position.y > 80) {
-            position.y = - Math.abs((1 / 40) * (100 - this.position.y));
-        }
-        if (this.position.x < (-250 + this.visibility)) {
-            position.x = Math.abs((1 / (100 * this.mass)) * (-250 - this.position.x));
-        }
-        if (this.position.z < (-250 + this.visibility)) {
-            position.z = Math.abs((1 / (100 * this.mass)) * (-250 - this.position.z));
-        }
-        if (this.position.y < 20) {
-            position.y = Math.abs((1 / 40) * (0 - this.position.y));
-        }
-
-        // Stop the boids leaving the visualisation if they don't avoid edges fast enough
-        if (this.position.y < -150 ||
-            this.position.y > 150) {
-            this.velocity.y = -this.velocity.y;
-        }
-        if (this.position.x < -300 ||
-            this.position.x > 300) {
-            this.velocity.x = -this.velocity.x;
-        }
-        if (this.position.z < -300 ||
-            this.position.z > 300) {
-            this.velocity.z = -this.velocity.z;
-        }
-
-        return position
-            .multiplyScalar(this.mass / 10);
+        return force.multiplyScalar(this.mass * 0.015)
     }
 
     public fly(neighbours: Boid[], forces: any, obstacles: THREE.Vector3[]) {
@@ -139,26 +95,31 @@ class Boid extends THREE.LineSegments {
         force.add(this.alignment(neighbours, forces.a));
         force.add(this.cohesion(neighbours, forces.c));
         force.add(this.separation(neighbours, forces.s));
-        force.add(this.avoidEdges());
         force.add(this.avoidObstacles(obstacles, forces.s));
 
         this.acceleration = force.divideScalar(this.mass);
     }
 
     public update() {
-        if (this.counter === 10) {
-            this.counter = 0;
-        }
-        this.counter++;
         this.velocity.add(this.acceleration);
         this.velocity.clampLength(this.speed, this.maxSpeed);
 
-        if (Math.random() * 10 > 9.98) {
-            this.velocity.add(new THREE.Vector3((Math.random() - 0.5) / 3, (Math.random() - 0.5) / 3, (Math.random() - 0.5) / 3))
-        }
-
         this.position.add(this.velocity);
         this.acceleration = new THREE.Vector3();
+
+        //   Stop the boids leaving the visualisation if they don't avoid edges fast enough
+        if (this.position.y < -149 ||
+            this.position.y > 149) {
+            this.velocity.y = -this.velocity.y;
+        }
+        if (this.position.x < -349 ||
+            this.position.x > 349) {
+            this.velocity.x = -this.velocity.x;
+        }
+        if (this.position.z < -349 ||
+            this.position.z > 349) {
+            this.velocity.z = -this.velocity.z;
+        }
 
         this.alignWithVelocityVector();
     }

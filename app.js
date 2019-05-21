@@ -14,8 +14,24 @@ var __extends = (this && this.__extends) || (function () {
 window.onload = function () {
     var elem = document.getElementById('container');
     elem.innerHTML = "";
-    var engine = new Engine(elem, 0xEFCBB8);
-    {
+    var engine = new Engine(elem, 0xC79EA4);
+    setCamera();
+    elem.addEventListener('click', function (event) {
+        engine.addToFlock();
+    });
+    window.onresize = function (event) {
+        setCamera();
+    };
+    document.getElementById('align').addEventListener('change', function (event) {
+        updateForces();
+    });
+    document.getElementById('cohesion').addEventListener('change', function (event) {
+        updateForces();
+    });
+    document.getElementById('separate').addEventListener('change', function (event) {
+        updateForces();
+    });
+    function setCamera() {
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / elem.clientHeight, 0.2, 1000);
         camera.position.set(-200, 30, 200);
         camera.rotation.order = 'YZX';
@@ -26,9 +42,9 @@ window.onload = function () {
         camera.rotation.x = -Math.PI / 16;
         engine.setCamera(camera);
     }
-    elem.addEventListener('click', function (event) {
-        engine.addToFlock();
-    });
+    function updateForces() {
+        engine.flock.updateForces(parseFloat(document.getElementById('align').value), parseFloat(document.getElementById('cohesion').value), parseFloat(document.getElementById('separate').value));
+    }
     function animate() {
         requestAnimationFrame(animate);
         engine.update();
@@ -44,112 +60,95 @@ var Boid = (function (_super) {
         edges.applyMatrix(new THREE.Matrix4().makeTranslation(0, -1, 0));
         edges.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
         _this = _super.call(this, edges, new THREE.LineBasicMaterial()) || this;
-        _this.position.x = -150;
-        _this.position.y = 30;
+        _this.mass = 1 + Math.random();
+        _this.scale.set(_this.mass / 1.5, _this.mass / 1.5, _this.mass / 1.5);
+        _this.position.x = -300;
+        _this.position.y = Math.random() * 30;
         _this.position.z = 150;
-        _this.weight = Math.random();
-        _this.direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-        _this.visibility = 40 + (10 * _this.weight);
+        _this.velocity = new THREE.Vector3(1, (Math.random() - 0.5), (Math.random() - 0.5) * 2);
+        _this.visibility = 60 + (10 * _this.mass);
+        _this.speed = 3 - _this.mass;
+        _this.maxSpeed = 5 - _this.mass;
         return _this;
     }
     Boid.prototype.alignWithVelocityVector = function () {
-        var alignment = new THREE.Vector3().addVectors(this.direction, this.position);
+        var alignment = new THREE.Vector3().addVectors(this.velocity, this.position);
         this.lookAt(alignment);
     };
-    Boid.prototype.normalize = function () {
-        var total = Math.max(Math.abs(this.direction.x), Math.abs(this.direction.z), Math.abs(this.direction.y));
-        this.direction.divideScalar(total);
-        this.direction.multiplyScalar(1.5 - (this.weight / 10));
-    };
-    Boid.prototype.alignment = function (neighbours) {
-        var vel_x = 0;
-        var vel_y = 0;
-        var vel_z = 0;
+    Boid.prototype.alignment = function (neighbours, strength) {
+        var steering = new THREE.Vector3(0, 0, 0);
+        if (neighbours.length === 0) {
+            return steering;
+        }
         for (var i = 0; i < neighbours.length; i++) {
-            vel_x += neighbours[i].direction.x;
-            vel_y += neighbours[i].direction.y;
-            vel_z += neighbours[i].direction.z;
+            steering.add(neighbours[i].velocity);
         }
-        if (neighbours.length) {
-            this.direction.x += (vel_x / neighbours.length) / (this.weight * 10);
-            this.direction.y += (vel_y / neighbours.length) / (this.weight * 10);
-            this.direction.z += (vel_z / neighbours.length) / (this.weight * 10);
-        }
+        return steering.divideScalar(neighbours.length)
+            .sub(this.velocity)
+            .clampLength(0, this.mass * strength);
     };
-    Boid.prototype.cohesion = function () {
-        var pos_x = 0;
-        var pos_y = 0;
-        var pos_z = 0;
-        for (var i = 0; i < this.neighbours.length; i++) {
-            pos_x += this.neighbours[i].position.x;
-            pos_y += this.neighbours[i].position.y;
-            pos_z += this.neighbours[i].position.z;
+    Boid.prototype.cohesion = function (neighbours, strength) {
+        var position = new THREE.Vector3(0, 0, 0);
+        if (neighbours.length === 0) {
+            return position;
         }
-        if (this.neighbours.length) {
-            this.direction.x += ((pos_x / this.neighbours.length) - this.position.x) / (this.weight / 0.1);
-            this.direction.y += ((pos_y / this.neighbours.length) - this.position.y) / (this.weight / 0.1);
-            this.direction.z += ((pos_z / this.neighbours.length) - this.position.z) / (this.weight / 0.1);
+        for (var i = 0; i < neighbours.length; i++) {
+            position.add(neighbours[i].position);
         }
+        return position.divideScalar(neighbours.length)
+            .sub(this.position)
+            .clampLength(0, this.mass * strength);
     };
-    Boid.prototype.separation = function () {
-        var pos_x = 0;
-        var pos_y = 0;
-        var pos_z = 0;
-        for (var i = 0; i < this.neighbours.length; i++) {
-            pos_x += this.neighbours[i].position.x;
-            pos_y += this.neighbours[i].position.y;
-            pos_z += this.neighbours[i].position.z;
+    Boid.prototype.separation = function (neighbours, strength) {
+        var force = new THREE.Vector3(0, 0, 0);
+        if (neighbours.length === 0) {
+            return force;
         }
-        if (this.neighbours.length) {
-            this.direction.x += (this.position.x - (pos_x / this.neighbours.length));
-            this.direction.y += (this.position.y - (pos_y / this.neighbours.length));
-            this.direction.z += (this.position.z - (pos_z / this.neighbours.length));
+        for (var i = 0; i < neighbours.length; i++) {
+            var distance = new THREE.Vector3(this.position.x, this.position.y, this.position.z).distanceTo(neighbours[i].position);
+            if (distance < (40 + (10 * this.mass))) {
+                var offset = new THREE.Vector3(this.position.x, this.position.y, this.position.z).sub(neighbours[i].position);
+                force.add(offset.divideScalar(distance));
+            }
         }
+        return force.divideScalar(neighbours.length)
+            .multiplyScalar(this.mass * strength);
     };
-    Boid.prototype.isVisible = function (boid) {
-        return Math.abs(boid.position.x - this.position.x) < this.visibility &&
-            Math.abs(boid.position.y - this.position.y) < this.visibility &&
-            Math.abs(boid.position.z - this.position.z) < this.visibility;
+    Boid.prototype.avoidObstacles = function (obstacles, strength) {
+        var force = new THREE.Vector3(0, 0, 0);
+        for (var i = 0; i < obstacles.length; i++) {
+            var distance = new THREE.Vector3(this.position.x, this.position.y, this.position.z).distanceTo(obstacles[i]);
+            if (distance < (80 + (10 * this.mass))) {
+                var offset = new THREE.Vector3(this.position.x, this.position.y, this.position.z).sub(obstacles[i]);
+                force.add(offset.divideScalar(distance));
+            }
+        }
+        return force.multiplyScalar(this.mass * 0.015);
     };
-    Boid.prototype.isForcible = function (boid) {
-        return Math.abs(boid.position.x - this.position.x) < this.force &&
-            Math.abs(boid.position.y - this.position.y) < this.force &&
-            Math.abs(boid.position.z - this.position.z) < this.force;
+    Boid.prototype.fly = function (neighbours, forces, obstacles) {
+        var force = new THREE.Vector3(0, 0, 0);
+        force.add(this.alignment(neighbours, forces.a));
+        force.add(this.cohesion(neighbours, forces.c));
+        force.add(this.separation(neighbours, forces.s));
+        force.add(this.avoidObstacles(obstacles, forces.s));
+        this.acceleration = force.divideScalar(this.mass);
     };
-    Boid.prototype.fly = function (neighbours) {
-        if (this.position.x < -250 ||
-            this.position.x > 250) {
-            this.direction.x = -this.direction.x;
+    Boid.prototype.update = function () {
+        this.velocity.add(this.acceleration);
+        this.velocity.clampLength(this.speed, this.maxSpeed);
+        this.position.add(this.velocity);
+        this.acceleration = new THREE.Vector3();
+        if (this.position.y < -149 ||
+            this.position.y > 149) {
+            this.velocity.y = -this.velocity.y;
         }
-        if (this.position.y < -100 ||
-            this.position.y > 150) {
-            this.direction.y = -this.direction.y;
+        if (this.position.x < -349 ||
+            this.position.x > 349) {
+            this.velocity.x = -this.velocity.x;
         }
-        if (this.position.z < -250 ||
-            this.position.z > 250) {
-            this.direction.z = -this.direction.z;
-        }
-        this.alignment(neighbours);
-        this.position.x += this.direction.x;
-        this.position.y += this.direction.y;
-        this.position.z += this.direction.z;
-        if (this.direction.x > 2) {
-            this.direction.x = 2;
-        }
-        if (this.direction.y > 2) {
-            this.direction.y = 2;
-        }
-        if (this.direction.z > 2) {
-            this.direction.z = 2;
-        }
-        if (this.direction.x < -2) {
-            this.direction.x = -2;
-        }
-        if (this.direction.y < -2) {
-            this.direction.y = -2;
-        }
-        if (this.direction.z < -2) {
-            this.direction.z = -2;
+        if (this.position.z < -349 ||
+            this.position.z > 349) {
+            this.velocity.z = -this.velocity.z;
         }
         this.alignWithVelocityVector();
     };
@@ -162,9 +161,49 @@ var Engine = (function () {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(element.clientWidth, element.clientHeight);
         element.appendChild(this.renderer.domElement);
+        this.element = element;
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 20, 40);
+        this.flock = new Flock(this.scene, 200, 400);
+        this.obstacles = []
+            .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
+            .concat(this.makeWall(350, 350, -150, 150, -350, 350))
+            .concat(this.makePlane(-350, 350, -150, -350, 350))
+            .concat(this.makePlane(-350, 350, 150, -350, 350))
+            .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
+            .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
+            .concat(this.makeWall(-100, -0, -40, 40, 0, 100));
     }
+    Engine.prototype.makeWall = function (x0, x1, y0, y1, z0, z1) {
+        var points = [];
+        var planeLength = Math.sqrt(Math.pow((x1 - x0), 2) + Math.pow((z1 - z0), 2));
+        var numPoints = (planeLength / 20);
+        var planeHeight = y1 - y0;
+        var numLayers = (planeHeight / 20);
+        var deltaX = (x1 - x0) / numPoints;
+        var deltaY = planeHeight / numLayers;
+        var deltaZ = (z1 - z0) / numPoints;
+        for (var i = 0; i <= numLayers; i++) {
+            for (var j = 0; j <= numPoints; j++) {
+                points.push(new THREE.Vector3(x0 + (deltaX * j), y0 + (deltaY * i), z0 + (deltaZ * j)));
+            }
+        }
+        return points;
+    };
+    Engine.prototype.makePlane = function (x0, x1, y, z0, z1) {
+        var points = [];
+        var planeLength = x1 - x0;
+        var numPoints = (planeLength / 20);
+        var planeHeight = z1 - z0;
+        var numLayers = (planeHeight / 20);
+        var deltaX = (x1 - x0) / numPoints;
+        var deltaZ = (z1 - z0) / numPoints;
+        for (var i = 0; i <= numLayers; i++) {
+            for (var j = 0; j <= numPoints; j++) {
+                points.push(new THREE.Vector3(x0 + (deltaX * j), y, z0 + (deltaZ * i)));
+            }
+        }
+        return points;
+    };
     Engine.prototype.enableShadows = function () {
         this.renderer.shadowMap.enabled = true;
     };
@@ -180,9 +219,6 @@ var Engine = (function () {
     Engine.prototype.getCamera = function () {
         return this.camera;
     };
-    Engine.prototype.setBackground = function () {
-        this.scene.background = new THREE.Color(0xEFCBB8);
-    };
     Engine.prototype.addToFlock = function () {
         if (this.flock.size === this.flock.max) {
             var obsolete = this.flock.flock.shift();
@@ -191,7 +227,7 @@ var Engine = (function () {
         this.flock.addBoid(this.scene);
     };
     Engine.prototype.update = function () {
-        this.flock.updateFlock();
+        this.flock.updateFlock(this.obstacles);
         this.renderer.render(this.scene, this.camera);
     };
     return Engine;
@@ -201,16 +237,23 @@ var Flock = (function () {
         this.flock = [];
         this.max = maxSize;
         this.populate(scene, initialSize);
-        this.distance = 20;
-        this.distanceSquared = Math.pow(this.distance, 2);
+        this.forces = { a: 0.1, c: 1 / 15, s: 1 };
     }
     Flock.prototype.setSize = function () {
         this.size = this.flock.length;
     };
     Flock.prototype.populate = function (scene, size) {
+        var _this = this;
         for (var i = 0; i < size; i++) {
-            this.addBoid(scene);
+            setTimeout(function () {
+                _this.addBoid(scene);
+            }, 50 * i);
         }
+    };
+    Flock.prototype.updateForces = function (a, c, s) {
+        this.forces.a = a;
+        this.forces.c = c;
+        this.forces.s = s;
     };
     Flock.prototype.addBoid = function (scene) {
         var boid = new Boid();
@@ -218,20 +261,33 @@ var Flock = (function () {
         this.setSize();
         scene.add(boid);
     };
-    Flock.prototype.updateFlock = function () {
+    Flock.prototype.updateFlock = function (obstacles) {
         for (var i = 0; i < this.size; i++) {
             var neighbors = [];
             for (var j = 0; j < this.size; j++) {
                 if (j != i) {
                     var squareDistance = Math.pow(this.flock[j].position.x - this.flock[i].position.x, 2)
-                        + Math.pow(this.flock[j].position.y - this.flock[i].position.y, 2);
-                    if (squareDistance < this.distanceSquared) {
+                        + Math.pow(this.flock[j].position.y - this.flock[i].position.y, 2)
+                        + Math.pow(this.flock[j].position.z - this.flock[i].position.z, 2);
+                    if (squareDistance < Math.pow(this.flock[i].visibility, 2)) {
                         neighbors.push(this.flock[j]);
                     }
                 }
             }
-            this.flock[i].fly(neighbors);
+            this.flock[i].fly(neighbors, this.forces, obstacles);
+        }
+        for (var i = 0; i < this.size; i++) {
+            this.flock[i].update();
         }
     };
     return Flock;
 }());
+System.register("interface", [], function (exports_1, context_1) {
+    "use strict";
+    var __moduleName = context_1 && context_1.id;
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
