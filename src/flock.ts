@@ -59,4 +59,8 @@ class Flock {
       this.flock[i].update();
     }
   }
+
+  // public steer() {
+  //   this.flock[0].
+  // }
 }

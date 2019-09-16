@@ -14,10 +14,29 @@ var __extends = (this && this.__extends) || (function () {
 window.onload = function () {
     var elem = document.getElementById('container');
     elem.innerHTML = "";
-    var engine = new Engine(elem, 0xC79EA4);
+    var engine = new Engine(elem, 0xFFFFFF);
     setCamera();
     elem.addEventListener('click', function (event) {
         engine.addToFlock();
+    });
+    elem.addEventListener('keydown', function (event) {
+        var dir = '';
+        switch (event.keyCode) {
+            case 37:
+                dir = 'left';
+                break;
+            case 38:
+                dir = 'down';
+                break;
+            case 39:
+                dir = 'right';
+                break;
+            case 40:
+                dir = 'up';
+                break;
+            default:
+                break;
+        }
     });
     window.onresize = function (event) {
         setCamera();
@@ -59,7 +78,7 @@ var Boid = (function (_super) {
         var edges = new THREE.EdgesGeometry(geometry, 0);
         edges.applyMatrix(new THREE.Matrix4().makeTranslation(0, -1, 0));
         edges.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-        _this = _super.call(this, edges, new THREE.LineBasicMaterial()) || this;
+        _this = _super.call(this, edges, new THREE.LineBasicMaterial({ color: 0X442C2E })) || this;
         _this.mass = 1 + Math.random();
         _this.scale.set(_this.mass / 1.5, _this.mass / 1.5, _this.mass / 1.5);
         _this.position.x = -300;
@@ -146,9 +165,11 @@ var Boid = (function (_super) {
             this.position.x > 349) {
             this.velocity.x = -this.velocity.x;
         }
-        if (this.position.z < -349 ||
-            this.position.z > 349) {
-            this.velocity.z = -this.velocity.z;
+        if (this.position.z < -349) {
+            this.position.z = 349;
+        }
+        if (this.position.z > 349) {
+            this.position.z = -349;
         }
         this.alignWithVelocityVector();
     };
@@ -163,14 +184,12 @@ var Engine = (function () {
         element.appendChild(this.renderer.domElement);
         this.element = element;
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 200, 400);
+        this.flock = new Flock(this.scene, 100, 400);
         this.obstacles = []
             .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
             .concat(this.makeWall(350, 350, -150, 150, -350, 350))
             .concat(this.makePlane(-350, 350, -150, -350, 350))
             .concat(this.makePlane(-350, 350, 150, -350, 350))
-            .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
-            .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
             .concat(this.makeWall(-100, -0, -40, 40, 0, 100));
     }
     Engine.prototype.makeWall = function (x0, x1, y0, y1, z0, z1) {

@@ -13,7 +13,7 @@ class Boid extends THREE.LineSegments {
         var edges = new THREE.EdgesGeometry(geometry, 0);
         edges.applyMatrix(new THREE.Matrix4().makeTranslation(0, -1, 0));
         edges.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-        super(edges, new THREE.LineBasicMaterial());
+        super(edges, new THREE.LineBasicMaterial({color: 0X442C2E}));
         this.mass = 1 + Math.random();
         this.scale.set(this.mass / 1.5, this.mass / 1.5, this.mass / 1.5);
         this.position.x = -300;
@@ -98,6 +98,7 @@ class Boid extends THREE.LineSegments {
         force.add(this.avoidObstacles(obstacles, forces.s));
 
         this.acceleration = force.divideScalar(this.mass);
+
     }
 
     public update() {
@@ -116,9 +117,11 @@ class Boid extends THREE.LineSegments {
             this.position.x > 349) {
             this.velocity.x = -this.velocity.x;
         }
-        if (this.position.z < -349 ||
-            this.position.z > 349) {
-            this.velocity.z = -this.velocity.z;
+        if (this.position.z < -349) {
+            this.position.z = 349
+        }
+        if (this.position.z > 349) {
+            this.position.z = -349
         }
 
         this.alignWithVelocityVector();

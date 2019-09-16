@@ -2,7 +2,7 @@ window.onload = () => {
     const elem = document.getElementById('container');
     elem.innerHTML = "";
 
-    const engine = new Engine(elem, 0xC79EA4);
+    const engine = new Engine(elem, 0xFFFFFF);
 
     setCamera();
 
@@ -11,6 +11,28 @@ window.onload = () => {
     elem.addEventListener('click', (event) => {
         engine.addToFlock();
     })
+
+    elem.addEventListener('keydown', (event) => {
+        let dir = '';
+        switch (event.keyCode) {
+            case 37:
+                dir = 'left';
+                break;
+            case 38:
+                dir = 'down';
+                break;
+            case 39:
+                dir = 'right';
+                break;
+            case 40:
+                dir = 'up';
+                break;
+            default:
+                break;
+        }
+        // engine.steer(dir);
+    })
+
 
     window.onresize = function (event) {
         setCamera();

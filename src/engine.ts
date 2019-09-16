@@ -17,14 +17,14 @@ class Engine {
         this.element = element;
 
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 300, 400);
+        this.flock = new Flock(this.scene, 100, 400);
         this.obstacles = []
             .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
             .concat(this.makeWall(350, 350, -150, 150, -350, 350))
             .concat(this.makePlane(-350, 350, -150, -350, 350))
             .concat(this.makePlane(-350, 350, 150, -350, 350))
-            .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
-            .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
+            // .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
+            // .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
             .concat(this.makeWall(-100, -0, -40, 40, 0, 100))
     }
 
@@ -90,4 +90,8 @@ class Engine {
         this.flock.updateFlock(this.obstacles);
         this.renderer.render(this.scene, this.camera);
     }
+
+    // public steer(direction: string) {
+    //     this.flock.steer(direction);
+    // }
 }
