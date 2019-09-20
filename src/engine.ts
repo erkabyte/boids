@@ -7,6 +7,10 @@ class Engine {
     public flock: Flock;
     private element: HTMLElement;
     private obstacles: THREE.Vector3[];
+    private flockSize: number = 150;
+    private flockMaximum: number = 300
+    private boxHeight: number = 150;
+    private boxWidth: number = 350;
 
     public constructor(element: HTMLElement, clearColour: number) {
         this.renderer = new THREE.WebGLRenderer();
@@ -17,12 +21,12 @@ class Engine {
         this.element = element;
 
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 100, 400);
+        this.flock = new Flock(this.scene, this.flockSize, this.flockMaximum);
         this.obstacles = []
-            .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
-            .concat(this.makeWall(350, 350, -150, 150, -350, 350))
-            .concat(this.makePlane(-350, 350, -150, -350, 350))
-            .concat(this.makePlane(-350, 350, 150, -350, 350))
+            .concat(this.makeWall(-this.boxWidth, -this.boxWidth, -this.boxHeight, this.boxHeight, -this.boxWidth, this.boxWidth))
+            .concat(this.makeWall(this.boxWidth, this.boxWidth, -this.boxHeight, this.boxHeight, -this.boxWidth, this.boxWidth))
+            .concat(this.makePlane(-this.boxWidth, this.boxWidth, -this.boxHeight, -this.boxWidth, this.boxWidth))
+            .concat(this.makePlane(-this.boxWidth, this.boxWidth, this.boxHeight, -this.boxWidth, this.boxWidth))
             // .concat(this.makeWall(-350, 350, -150, 150, -350, -350))
             // .concat(this.makeWall(-350, 350, -150, 150, 350, 350))
             .concat(this.makeWall(-100, -0, -40, 40, 0, 100))

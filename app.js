@@ -177,6 +177,10 @@ var Boid = (function (_super) {
 }(THREE.LineSegments));
 var Engine = (function () {
     function Engine(element, clearColour) {
+        this.flockSize = 150;
+        this.flockMaximum = 300;
+        this.boxHeight = 150;
+        this.boxWidth = 350;
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setClearColor(clearColour);
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -184,9 +188,9 @@ var Engine = (function () {
         element.appendChild(this.renderer.domElement);
         this.element = element;
         this.scene = new THREE.Scene();
-        this.flock = new Flock(this.scene, 100, 400);
+        this.flock = new Flock(this.scene, this.flockSize, this.flockMaximum);
         this.obstacles = []
-            .concat(this.makeWall(-350, -350, -150, 150, -350, 350))
+            .concat(this.makeWall(-this.boxWidth, -this.boxWidth, -this.boxHeight, this.boxHeight, -this.boxWidth, this.boxWidth))
             .concat(this.makeWall(350, 350, -150, 150, -350, 350))
             .concat(this.makePlane(-350, 350, -150, -350, 350))
             .concat(this.makePlane(-350, 350, 150, -350, 350))
