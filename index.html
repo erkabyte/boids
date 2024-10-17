@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Flocking</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta name="description" content="Creating flocking behaviour in a group of flying objects">
+	<link rel="stylesheet" href="./main.css">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+</head>
+<h1 style="color: #fedbd0;position: absolute;margin: 0;left:50%;top:20%;font-family: sans-serif;z-index: 100;
+font-size: 4em;">Hello Boids</h1>
+<div class="container">
+	<div style="height:720px;width:100%" id="container"></div>
+	<div class="flexcontainer">
+		<div class="slidecontainer">
+			<input type="range" min="0" max="0.3" value="0.15" class="slider" step="0.01" id="align">
+			<p>Alignment</p>
+		</div>
+		<div class="slidecontainer">
+			<input type="range" min="0" max="0.2" value="0.05" class="slider" step="0.01" id="cohesion">
+			<p>Cohesion</p>
+		</div>
+		<div class="slidecontainer">
+			<input type="range" min="0" max="3" value="1.5" class="slider" step="0.1" id="separate">
+			<p>Separation</p>
+		</div>
+	</div>
+</div>
+<div style="height:500px;width:100%;background-color:#d3cfcf"></div>
+<script src="src/three.js"></script>
+<script src="app.js"></script>
+</body>
+
+</html>
